@@ -1,8 +1,12 @@
 # The healthy on-target run. Every assertion is a line the FIRMWARE computes
 # from its own state (01-05's verdict-line rule): the startup integrity
-# check, the runtime vector-table read, the RCC readback, then the SysTick
-# uptime counter. Single-space prefixes only - multi-space runs must
-# byte-match printf padding (04's lesson) and there is no printf here anyway.
+# check, the runtime vector-table read, the RCC readback - here, with
+# Wokwi's RCC model, the PLL-CONFIRMED line - then the SysTick uptime counter.
+#
+# No write-serial steps: wokwi-cli's serial input never reaches USART1 RX in
+# Wokwi's F103 model (runs 34705510210, 34706011109, 34706221452 - five USART
+# configurations and three wirings; PA10 was never driven, RXNE never set).
+# Typed-command coverage (map, vec, clk, fault) is renode/boot.robot's job.
 # ~6 s of simulated time; Wokwi free tier is 50 sim-minutes/month.
 name: "boots clean: .data copied, vectors as linked, PLL confirmed, SysTick ticking"
 version: 1
@@ -15,8 +19,4 @@ steps:
   - wait-serial: "entry[1] = Reset_Handler 0x0800"
   - wait-serial: "clk: sysclk 72000000 Hz via PLL (HSE 8 MHz x9), SWS confirms PLL, flash 2 WS, APB1 /2"
   - wait-serial: "shell: commands: help | boot | vec | clk | map | fault"
-  - write-serial: "map\n"
-  - wait-serial: "map: _sstack=0x20004c00 _estack=0x20005000 msp now=0x2000"
-  - write-serial: "vec\n"
-  - wait-serial: "vec[15] = 0x0800"
   - wait-serial: "uptime: t=5s"

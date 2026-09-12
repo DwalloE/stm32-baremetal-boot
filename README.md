@@ -103,6 +103,24 @@ What the tools caught while this was built - evidence, not war stories:
   positional argument, parsed as the `float? timeout`. `\s+` fixed it. The
   firmware itself had already printed every line the suite wanted (04's
   multi-space lesson, now in Robot form).
+- **Wokwi's F103 never delivered a typed byte.** The first token-backed run
+  ([34705510210](https://github.com/DwalloE/stm32-baremetal-boot/actions/runs/34705510210))
+  passed every boot verdict - including the PLL-confirmed clock line - then
+  timed out waiting for `map` to answer. A probe build counted PA10-low
+  samples and RXNE events per second: RXNE stayed 0, and the PA10 count was
+  *identical* (307, 336, 364 ...) across five USART configurations
+  (baseline, BRR for 8 and 36 MHz, RX pull-up, RXNEIE) and unchanged by
+  the write - deterministic floating-input noise, not a monitor driving the
+  pin. Swapped or absent wiring killed TX too, so the wiring is right and
+  the monitor's TX path simply does not reach the USART model (runs
+  [34706011109](https://github.com/DwalloE/stm32-baremetal-boot/actions/runs/34706011109),
+  [34706221452](https://github.com/DwalloE/stm32-baremetal-boot/actions/runs/34706221452)).
+  Two more facts fell out: the monitor showed clean text even with the BRR
+  computed for the wrong bus clock, so it reads bytes at the peripheral, not
+  the pin - readable output is **not** evidence of the BRR arithmetic in
+  Wokwi (the README no longer claims it is); and `--serial-log-file` drops
+  bytes at chunk boundaries while the console stream is intact, so evidence
+  is quoted from the console. Wokwi now asserts boot output only.
 - **Renode has no RCC on the F103.** Verified before planning, not after:
   RCC_CR is a fixed tag (ready bits stuck high) and RCC_CFGR is unmapped. A
   firmware that spins on `SWS == PLL` hangs silently there. Every wait in
@@ -135,8 +153,9 @@ What the tools caught while this was built - evidence, not war stories:
   scenario requires `clk: sysclk 72000000 Hz via PLL (HSE 8 MHz x9), SWS
   confirms PLL, flash 2 WS, APB1 /2` plus the boot/vec lines and `uptime:
   t=5s`; the control run passes `--elf build/control.elf` and requires the
-  violation with `--fail-text 'boot: data ok'`. Readable output at 115200 is
-  the PCLK2/BRR arithmetic being right.
+  violation with `--fail-text 'boot: data ok'`. No typed commands here: the
+  monitor's input never reaches USART1 RX in Wokwi's F103 (see the gallery),
+  so the shell is Renode's to test.
 
 Pass and fail texts share no substring (`boot:` vs `boot INTEGRITY VIOLATION`,
 `vec:` vs `vec MISMATCH`, `clk:` vs `clk UNVERIFIED`), so a scenario matching
@@ -147,7 +166,8 @@ one cannot be satisfied by the other.
 - **Two simulators, two partial models.** Renode's F103 has no RCC, no FLASH
   interface, no BOOT0 alias at 0 (`bluepill.resc` sets VTOR explicitly) and a
   SysTick fixed at 72 MHz whatever the firmware asked for; Wokwi's models the
-  RCC and SysTick but lists DMA, IWDG, PWR and RTC as not implemented. Neither
+  RCC and SysTick, lists DMA, IWDG, PWR and RTC as not implemented, and did
+  not deliver serial-monitor input to USART1 RX from `wokwi-cli`. Neither
   models oscillator start-up, PLL lock time, or the *effect* of a wrong flash
   wait-state count - the 2 WS are set because RM0008 p.61 says so, and no
   simulator here would fail if they were not.

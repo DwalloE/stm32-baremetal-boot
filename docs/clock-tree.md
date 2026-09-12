@@ -113,10 +113,12 @@ Since the register is USARTDIV in 1/16 units, `BRR = round(fPCLK / baud)`:
 | 8 MHz | 9600 | 833.333 | 0x0341 | 52 + 1/16 (error 0.04%) |
 
 `clk_usart_brr()` refuses baud = 0, USARTDIV < 1 (BRR < 16) and anything
-that will not fit 16 bits (72 MHz at 300 baud = 240000). Readable serial
-output in Wokwi at 115200 is this table being right: the USART model
-derives its bit time from the same PCLK2 the RCC model computes, so a wrong
-prescaler prints garbage.
+that will not fit 16 bits (72 MHz at 300 baud = 240000). Neither simulator
+checks this table: Wokwi's monitor showed clean text even from a probe build
+whose BRR assumed an 8 MHz bus (run 34706011109, variant B), so it reads
+bytes at the peripheral rather than timing bits on the pin, and Renode's
+STM32_UART ignores BRR entirely. On silicon a wrong row prints garbage; here
+the host tests are the only check.
 
 ## SysTick (PM0056 §4.5, pp.150–153)
 

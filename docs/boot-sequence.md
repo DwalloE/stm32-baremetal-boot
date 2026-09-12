@@ -233,6 +233,27 @@ check said so, and everything after it still ran - the verdict printer never
 depended on `.data`. Without this run the healthy `boot: data ok` would be a
 claim nobody had tested.
 
+### The same image in Wokwi
+
+Wokwi models the RCC, so the same code prints the confirmed line (run
+[34705510210](https://github.com/DwalloE/stm32-baremetal-boot/actions/runs/34705510210),
+wokwi-cli console):
+
+```text
+stm32-baremetal-boot: STM32F103C8, reset vector to main() with no HAL, no CMSIS
+boot: data ok, bss ok, sp ok
+vec: table at 0x08000000 (VTOR=0x08000000), entry[0] = _estack 0x20005000, entry[1] = Reset_Handler 0x08000d25
+clk: sysclk 72000000 Hz via PLL (HSE 8 MHz x9), SWS confirms PLL, flash 2 WS, APB1 /2
+shell: commands: help | boot | vec | clk | map | fault
+uptime: t=1s
+```
+
+HSERDY, PLLRDY and SWS = PLL all read back as requested: the register
+sequence in `rcc.c` is the one the model accepts. Wokwi reports
+`VTOR=0x08000000` too, so it does not leave VTOR at the reset value of 0
+either; on silicon that field would read 0 and the same bytes would arrive
+through the BOOT0 alias.
+
 ## Step 4 - proving vector 3 (the fault demo)
 
 ```text
