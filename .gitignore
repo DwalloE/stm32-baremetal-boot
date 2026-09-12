@@ -1,0 +1,24 @@
+# arm build output (elf/hex/map/lst are CI artifacts, not commits)
+build/
+
+# host test build output
+test/build/
+*.gcno
+*.gcda
+*.gcov
+
+# renode-test output
+renode/output/
+robot_output.xml
+log.html
+report.html
+*.log
+
+# wokwi-cli serial logs
+wokwi-serial*.log
+
+# python
+__pycache__/
+
+# never ships
+CLAUDE-HANDOFF.md
