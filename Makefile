@@ -76,9 +76,11 @@ $(BUILD)/%.hex: $(BUILD)/%.elf
 $(BUILD)/%.bin: $(BUILD)/%.elf
 	$(OBJCOPY) -O binary $< $@
 
-# Disassembly with source interleaved; docs/boot-sequence.md quotes it.
+# The vector table as bytes (it is data, so -d would skip it), then the
+# disassembly with source interleaved; docs/boot-sequence.md quotes both.
 $(BUILD)/%.lst: $(BUILD)/%.elf
-	$(OBJDUMP) -d -S $< > $@
+	$(OBJDUMP) -s -j .isr_vector $< > $@
+	$(OBJDUMP) -d -S $< >> $@
 
 size: $(BUILD)/firmware.elf $(BUILD)/control.elf
 	$(SIZE) $^ | tee $(BUILD)/size.txt
