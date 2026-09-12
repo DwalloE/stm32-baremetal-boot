@@ -6,7 +6,7 @@
 uint8_t clk_flash_latency(uint32_t sysclk_hz)
 {
     /*
-     * PM0075 §3.1 "Reading the flash memory", FLASH_ACR.LATENCY:
+     * RM0008 §3.3.3 p.61, FLASH_ACR.LATENCY[2:0] "ratio of the SYSCLK period to the Flash access time":
      *   000: zero wait state,  0 < SYSCLK <= 24 MHz
      *   001: one wait state,  24 < SYSCLK <= 48 MHz
      *   010: two wait states, 48 < SYSCLK <= 72 MHz
@@ -48,7 +48,7 @@ static void fill_buses(clk_plan_t *p, uint32_t sysclk_hz)
     p->sysclk_hz = sysclk_hz;
     p->hclk_hz   = sysclk_hz;            /* AHB prescaler /1: RCC_CFGR.HPRE = 0 */
     p->pclk2_hz  = sysclk_hz;            /* APB2 prescaler /1: PPRE2 = 0, max 72 MHz */
-    if (sysclk_hz > CLK_PCLK1_MAX_HZ) {  /* APB1 is limited to 36 MHz (RM0008 §7.3.2 PPRE1 note) */
+    if (sysclk_hz > CLK_PCLK1_MAX_HZ) {  /* "The maximum allowed frequency of the APB1 domain is 36 MHz" (RM0008 §7.2 p.93) */
         p->ppre1_bits = 0x4u;            /* 0b100 = HCLK/2 */
         p->pclk1_hz   = sysclk_hz / 2u;
     } else {
@@ -143,7 +143,7 @@ uint32_t clk_usart_brr(uint32_t pclk_hz, uint32_t baud)
 
 uint32_t clk_systick_reload_1ms(uint32_t hclk_hz)
 {
-    /* SysTick fires when the counter wraps from 0, so N cycles needs RELOAD = N-1 (PM0056 §4.5.2). */
+    /* SysTick fires when the counter wraps from 0, so N cycles needs RELOAD = N-1 (PM0056 §4.5.2 p.152). */
     return hclk_hz / 1000u - 1u;
 }
 

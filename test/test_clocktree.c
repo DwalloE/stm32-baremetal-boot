@@ -62,7 +62,7 @@ static void test_64mhz_from_hsi_is_the_ceiling(void)
 
 static void test_flash_latency_bands(void)
 {
-    /* PM0075 §3.1: 0 WS up to and including 24 MHz, 1 WS up to 48, 2 WS up to 72. */
+    /* RM0008 §3.3.3 p.61: 0 WS up to and including 24 MHz, 1 WS up to 48, 2 WS up to 72. */
     CHECK(clk_flash_latency(8000000u) == 0, "8 MHz: 0 WS");
     CHECK(clk_flash_latency(24000000u) == 0, "24 MHz inclusive: 0 WS");
     CHECK(clk_flash_latency(24000001u) == 1, "just over 24: 1 WS");

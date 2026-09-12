@@ -7,8 +7,8 @@
  * rcc.c applies the result; test/test_clocktree.c proves every branch on
  * the host (100% branch coverage, gated in CI).
  *
- * Rules encoded (RM0008 Rev 21 §7.2 "Clocks" / Figure 8, §7.3.2 RCC_CFGR;
- * PM0075 §3.1 / RM0008 §3.3.3 flash latency; DS5319 §5.3.x oscillator ranges):
+ * Rules encoded (RM0008 Rev 15: §7.2 "Clocks" and Figure 8 "Clock tree", p.93, §7.3.2
+ * RCC_CFGR p.101; §3.3.3 FLASH_ACR.LATENCY p.61; DS5319 §5.3 oscillator ranges):
  *   - SYSCLK <= 72 MHz, HCLK = SYSCLK (AHB /1), PCLK2 = HCLK (APB2 /1),
  *     PCLK1 <= 36 MHz so APB1 is /2 whenever HCLK > 36 MHz
  *   - PLL input is HSI/2 (fixed 4 MHz) or HSE (optionally /2 via PLLXTPRE)
@@ -63,18 +63,18 @@ typedef struct {
 clk_err_t clk_plan(clk_source_t src, uint32_t src_hz, uint32_t target_hz,
                    clk_plan_t *out);
 
-/* Flash wait states for a given SYSCLK (PM0075 §3.1). Pure. */
+/* Flash wait states for a given SYSCLK (RM0008 §3.3.3 p.61, FLASH_ACR.LATENCY). Pure. */
 uint8_t clk_flash_latency(uint32_t sysclk_hz);
 
 /*
- * USART_BRR for a given peripheral clock and baud rate (RM0008 §27.3.4,
+ * USART_BRR for a given peripheral clock and baud rate (RM0008 §27.3.4 p.791,
  * Equation 1): USARTDIV = fPCLK / (16 x baud), stored as a 12.4 fixed-point
  * mantissa:fraction - which is just round(fPCLK / baud) in 1/16 units.
  * Returns 0 for an unrepresentable request (baud 0, DIV < 1 or > 4095.9375).
  */
 uint32_t clk_usart_brr(uint32_t pclk_hz, uint32_t baud);
 
-/* SysTick reload for a 1 ms tick from HCLK (PM0056 §4.5: counts RELOAD+1 cycles). */
+/* SysTick reload for a 1 ms tick from HCLK (PM0056 §4.5.2 p.152: N cycles needs RELOAD = N-1). */
 uint32_t clk_systick_reload_1ms(uint32_t hclk_hz);
 
 const char *clk_err_str(clk_err_t e);
