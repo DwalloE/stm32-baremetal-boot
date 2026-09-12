@@ -1,0 +1,22 @@
+# The healthy on-target run. Every assertion is a line the FIRMWARE computes
+# from its own state (01-05's verdict-line rule): the startup integrity
+# check, the runtime vector-table read, the RCC readback, then the SysTick
+# uptime counter. Single-space prefixes only - multi-space runs must
+# byte-match printf padding (04's lesson) and there is no printf here anyway.
+# ~6 s of simulated time; Wokwi free tier is 50 sim-minutes/month.
+name: "boots clean: .data copied, vectors as linked, PLL confirmed, SysTick ticking"
+version: 1
+author: "Elias Dwallo"
+
+steps:
+  - wait-serial: "stm32-baremetal-boot: STM32F103C8, reset vector to main() with no HAL, no CMSIS"
+  - wait-serial: "boot: data ok, bss ok, sp ok"
+  - wait-serial: "vec: table at "
+  - wait-serial: "entry[1] = Reset_Handler 0x0800"
+  - wait-serial: "clk: sysclk 72000000 Hz via PLL (HSE 8 MHz x9), SWS confirms PLL, flash 2 WS, APB1 /2"
+  - wait-serial: "shell: commands: help | boot | vec | clk | map | fault"
+  - write-serial: "map\n"
+  - wait-serial: "map: _sstack=0x20004c00 _estack=0x20005000 msp now=0x2000"
+  - write-serial: "vec\n"
+  - wait-serial: "vec[15] = 0x0800"
+  - wait-serial: "uptime: t=5s"

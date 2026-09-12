@@ -1,0 +1,16 @@
+# Wokwi simulator / Wokwi CI configuration.
+#
+# STM32 targets take .hex/.bin/.elf; the ELF carries symbols for the
+# simulator's debugger. CI runs this project twice with wokwi-cli, passing
+# --elf build/control.elf for the control run, so the healthy image is the
+# default here.
+#
+# Wokwi's F103 (docs.wokwi.com/parts/board-stm32-bluepill) models the core,
+# SysTick, GPIO, USART and RCC, so - unlike Renode - the clk verdict here is
+# expected to be the verified line, and readable 115200-baud output is itself
+# the PCLK2 / USART_BRR arithmetic being right.
+
+[wokwi]
+version = 1
+firmware = 'build/firmware.hex'
+elf = 'build/firmware.elf'

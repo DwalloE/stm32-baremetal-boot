@@ -1,0 +1,13 @@
+# The control run: build/control.elf (startup.s without the .data copy),
+# passed to wokwi-cli with --elf. This run REQUIRES the integrity violation
+# and CI additionally passes --fail-text 'boot: data ok' so the healthy
+# verdict appearing here fails the job. Without this run the healthy
+# scenario's pass line is a claim nobody has seen tested.
+name: "control: skipped .data copy must be caught by the boot-integrity check"
+version: 1
+author: "Elias Dwallo"
+
+steps:
+  - wait-serial: "boot INTEGRITY VIOLATION: data 4/4 words differ from flash, first at 0x20000000 ram=0x00000000 flash=0xc0de1234;"
+  - wait-serial: "vec: table at "
+  - wait-serial: "uptime: t=1s"
