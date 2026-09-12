@@ -44,7 +44,7 @@ jobs:
           arm-none-eabi-gcc --version | head -1
 
       - name: build both images
-        run: make all control EXTRA_CFLAGS=-DDEBUG_RX
+        run: make all control
 
       - name: arm-none-eabi-size
         run: make size
