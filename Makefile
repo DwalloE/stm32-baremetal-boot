@@ -31,7 +31,7 @@ ARCH    := -mcpu=cortex-m3 -mthumb
 CFLAGS  := $(ARCH) -std=c11 -Os -g3 -ffreestanding -fno-common \
            -ffunction-sections -fdata-sections \
            -Wall -Wextra -Werror -Wundef -Wshadow -Wconversion \
-           -Isrc -DSYSCLK_$(SYSCLK)=1
+           -Isrc -DSYSCLK_$(SYSCLK)=1 $(EXTRA_CFLAGS)
 ASFLAGS := $(ARCH) -g3
 LDFLAGS := $(ARCH) -nostdlib -nostartfiles -T $(LD) -Wl,--gc-sections \
            -Wl,--print-memory-usage

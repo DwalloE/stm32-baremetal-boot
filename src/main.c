@@ -33,6 +33,11 @@
 
 static char     line[32];
 static uint32_t line_len;
+#ifdef DEBUG_RX
+/* Temporary probe: is anything driving PA10, and does RXNE ever set? */
+#include "regs.h"
+static uint32_t dbg_rx_low, dbg_rxne, dbg_polls;
+#endif
 
 static int str_eq(const char *a, const char *b)
 {
@@ -142,8 +147,23 @@ int main(void)
             out_dec(seconds);
             out_str("s");
             out_nl();
+#ifdef DEBUG_RX
+            out_str("dbg: polls="); out_dec(dbg_polls);
+            out_str(" pa10_low="); out_dec(dbg_rx_low);
+            out_str(" rxne="); out_dec(dbg_rxne);
+            out_str(" SR="); out_hex32(USART1_SR);
+            out_str(" CR1="); out_hex32(USART1_CR1);
+            out_str(" CRH="); out_hex32(GPIO_CRH(GPIOA_BASE));
+            out_str(" IDR="); out_hex32(GPIO_IDR(GPIOA_BASE));
+            out_nl();
+#endif
             next_uptime += 1000;
         }
         poll_shell(&plan, &rep);
+#ifdef DEBUG_RX
+        dbg_polls++;
+        if ((GPIO_IDR(GPIOA_BASE) & (1u << 10)) == 0u) dbg_rx_low++;
+        if (USART1_SR & USART_SR_RXNE) dbg_rxne++;
+#endif
     }
 }
