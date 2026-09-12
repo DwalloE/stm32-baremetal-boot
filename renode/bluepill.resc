@@ -1,0 +1,26 @@
+:name: stm32-baremetal-boot
+:description: STM32F103C8 Blue Pill running the bare-metal boot firmware
+
+# Usage (interactive):
+#   renode renode/bluepill.resc               # loads build/firmware.elf
+#   $elf=@build/control.elf; i @renode/bluepill.resc
+# The robot suite sets $elf itself.
+
+using sysbus
+$elf ?= @build/firmware.elf
+
+mach create "bluepill"
+machine LoadPlatformDescription $ORIGIN/bluepill.repl
+
+showAnalyzer usart1
+
+macro reset
+"""
+    sysbus LoadELF $elf
+    # Renode has no BOOT0 pin and does not alias flash at 0x0000_0000, so the
+    # vector table's location is stated explicitly. LoadELF would also infer
+    # it from the lowest loaded segment; being explicit makes the claim visible.
+    sysbus.cpu VectorTableOffset 0x08000000
+"""
+
+runMacro $reset

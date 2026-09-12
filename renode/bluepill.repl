@@ -1,0 +1,17 @@
+// Blue Pill for Renode: the stock STM32F103 platform plus the board's LED.
+//
+// What the stock repl models (platforms/cpus/stm32f103.repl, Renode 1.17):
+// Cortex-M3 + NVIC (SysTick at a fixed 72 MHz), USART1-5, GPIO ports A-G,
+// TIM1-14, EXTI, AFIO, I2C, DMA. What it does NOT model: the RCC. Only
+// RCC_CR is present, as a read-only tag returning 0x0A020083 (HSIRDY, HSERDY
+// and PLLRDY permanently set); RCC_CFGR, FLASH_ACR and the enable registers
+// are unmapped - reads return 0, writes are dropped with a log line. The
+// firmware's clk verdict is therefore expected to be the UNVERIFIED line
+// here, and renode/boot.robot asserts exactly that.
+
+using "platforms/cpus/stm32f103.repl"
+
+led: Miscellaneous.LED @ gpioPortC 13
+
+gpioPortC:
+    13 -> led@0
