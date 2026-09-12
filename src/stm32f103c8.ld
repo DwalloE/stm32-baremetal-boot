@@ -7,13 +7,14 @@
  * _sstack for the stack-pointer range check. Everything else is convention
  * that GNU ld and GCC agree on (section names, alignment).
  *
- * Memory map: RM0008 Rev 21 §2.3 "Memory map" and §3.3 "Embedded flash memory":
+ * Memory map: RM0008 Rev 15 §3.3 "Memory map", Table 3 (p.51):
  *   flash 0x0800_0000, 64 KiB on the C8 part (128 KiB dies are common on
  *   "Blue Pill" boards, but the datasheet number is what we claim)
  *   SRAM  0x2000_0000, 20 KiB
  * After reset, flash is also aliased at 0x0000_0000 when BOOT0 = 0 (RM0008
- * §3.4 "Boot configuration"); the core fetches its initial MSP and PC from
- * address 0, which is why the vector table must be the first thing in flash.
+ * §3.4 "Boot configuration", Table 9, p.61); the core fetches its initial MSP
+ * and PC from address 0, which is why the vector table must be the first
+ * thing in flash.
  */
 
 ENTRY(Reset_Handler)
@@ -115,9 +116,8 @@ SECTIONS
      * section so it shows up in the map with a size, and so the linker
      * itself refuses a build whose .data + .bss collide with it.
      */
-    ._stack (NOLOAD) :
+    ._stack _sstack (NOLOAD) :
     {
-        . = _sstack;
         . = . + _stack_size;
     } > RAM
 

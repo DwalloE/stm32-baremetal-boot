@@ -9,9 +9,11 @@
  * References:
  *   ARMv7-M Architecture Reference Manual (DDI 0403E.e), §B1.5 "ARMv7-M
  *     exception model": vector table layout, reset behaviour, EPSR.T
- *   PM0056 (Cortex-M3 programming manual) §2.3.4 "Vector table"
- *   RM0008 Rev 21 §10.1.2 Table 63 "Vector table for other STM32F10xxx
- *     devices": the F103 medium-density external interrupt positions
+ *   PM0056 Rev 5 (Cortex-M3 programming manual) §2.3.4 "Vector table" pp.35-36,
+ *     §2.3.7 "Exception entry and return" p.39 (the stacked frame)
+ *   RM0008 Rev 15 §10.1.2 Table 63 "Vector table for other STM32F10xxx
+ *     devices" pp.203-205: the F103 medium-density external interrupt positions
+ *   RM0008 Rev 15 §3.4 "Boot configuration" p.61: flash aliased at 0 when BOOT0 = 0
  *
  * Build with:  arm-none-eabi-gcc -c startup.s
  * Control build (the boot-integrity check MUST fail):
