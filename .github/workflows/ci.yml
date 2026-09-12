@@ -1,0 +1,158 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  # The pure arithmetic: which PLL multiplier, prescalers, flash wait states
+  # and USART divisor a requested SYSCLK needs, and what the manual forbids.
+  # Every branch of clocktree.c must be taken both ways.
+  host:
+    name: host tests (clock-tree arithmetic + branch gate)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: unit tests and the clocktree.c branch gate
+        run: make -C test
+
+      - name: keep the coverage summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: |
+            test/build/gcov_summary.txt
+            test/build/*.gcov
+          if-no-files-found: error
+
+  # The images. Both are built from the same C and the same linker script;
+  # the control differs by one assembler symbol that removes the .data copy.
+  # The static vector-table check runs on both, and its self-test first.
+  firmware:
+    name: build (firmware + control) and check the vector table
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: install arm-none-eabi-gcc
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -yq gcc-arm-none-eabi binutils-arm-none-eabi
+          arm-none-eabi-gcc --version | head -1
+
+      - name: build both images
+        run: make all control
+
+      - name: arm-none-eabi-size
+        run: make size
+
+      - name: vector table matches source, map and ELF entry (self-test first)
+        run: make check
+
+      - name: keep elf, hex, map, disassembly and size
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware
+          path: |
+            build/firmware.elf
+            build/firmware.hex
+            build/firmware.bin
+            build/firmware.map
+            build/firmware.lst
+            build/control.elf
+            build/control.hex
+            build/control.map
+            build/control.lst
+            build/size.txt
+          if-no-files-found: error
+
+  # Renode carries the heavy assertions (no minute cap, no token): startup
+  # integrity, runtime vector check, SysTick uptime, LED heartbeat, the shell,
+  # the CONTROL image's required failure, and the deliberate HardFault.
+  # Portable build pinned to 1.17.0 (the antmicro action builds from source).
+  renode:
+    name: simulate in Renode (healthy, control, hardfault)
+    runs-on: ubuntu-latest
+    needs: firmware
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: firmware
+          path: build
+
+      - name: install Renode 1.17.0 portable + robot dependencies
+        run: |
+          wget -q https://github.com/renode/renode/releases/download/v1.17.0/renode-1.17.0.linux-portable.tar.gz
+          mkdir renode-portable
+          tar -xzf renode-1.17.0.linux-portable.tar.gz -C renode-portable --strip-components=1
+          python3 -m pip install -q -r renode-portable/tests/requirements.txt
+          renode-portable/renode --version
+
+      - name: run renode/boot.robot
+        run: |
+          renode-portable/renode-test --show-log \
+            --results-dir renode/output \
+            renode/boot.robot
+
+      - name: keep the robot log and report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: renode-results
+          path: renode/output
+          if-no-files-found: warn
+
+  # Wokwi's F103 models the RCC, so this is where the clk verdict is asserted
+  # as VERIFIED and where readable serial proves the BRR arithmetic. Skipped
+  # automatically on forks and clones without the secret - get a free token
+  # at https://wokwi.com/dashboard/ci
+  wokwi:
+    name: simulate in Wokwi (healthy + control)
+    runs-on: ubuntu-latest
+    needs: firmware
+    env:
+      WOKWI_CLI_TOKEN: ${{ secrets.WOKWI_CLI_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: firmware
+          path: build
+
+      - name: install wokwi-cli
+        if: env.WOKWI_CLI_TOKEN != ''
+        run: |
+          wget -q -O /usr/local/bin/wokwi-cli \
+            https://github.com/wokwi/wokwi-cli/releases/latest/download/wokwi-cli-linuxstatic-x64
+          chmod +x /usr/local/bin/wokwi-cli
+
+      - name: healthy - boot ok, vectors, PLL confirmed, uptime
+        if: env.WOKWI_CLI_TOKEN != ''
+        run: |
+          wokwi-cli --timeout 15000 \
+            --fail-text 'boot INTEGRITY VIOLATION' \
+            --scenario wokwi-ci.scenario.yaml \
+            --serial-log-file wokwi-serial-healthy.log .
+
+      - name: control - the skipped .data copy MUST be caught
+        if: env.WOKWI_CLI_TOKEN != ''
+        run: |
+          wokwi-cli --timeout 15000 \
+            --elf build/control.elf \
+            --fail-text 'boot: data ok' \
+            --scenario wokwi-control.scenario.yaml \
+            --serial-log-file wokwi-serial-control.log .
+
+      - name: keep the serial logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wokwi-serial
+          path: wokwi-serial-*.log
+          if-no-files-found: ignore
