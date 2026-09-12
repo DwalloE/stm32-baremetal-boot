@@ -52,8 +52,10 @@ Healthy Image Boots And Grades Itself
     Wait For Line On Uart    map: _sidata=0x0800    treatAsRegex=false
     Wait For Line On Uart    map: _sstack=0x20004c00 _estack=0x20005000 msp now=0x2000
     Write Line To Uart       vec
-    Wait For Line On Uart    vec\\[1\\] = 0x0800[0-9a-f]{3}[13579bdf]  Reset_Handler    treatAsRegex=true
-    Wait For Line On Uart    vec\\[15\\] = 0x0800[0-9a-f]{3}[13579bdf]  SysTick_Handler    treatAsRegex=true
+    # \s+ not a literal double space: Robot splits arguments on two or more spaces, and the
+    # second half would be parsed as the float? timeout ("Nullable`1 does not have a Parse method").
+    Wait For Line On Uart    vec\\[1\\] = 0x0800[0-9a-f]{3}[13579bdf]\\s+Reset_Handler    treatAsRegex=true
+    Wait For Line On Uart    vec\\[15\\] = 0x0800[0-9a-f]{3}[13579bdf]\\s+SysTick_Handler    treatAsRegex=true
     Write Line To Uart       clk
     Wait For Line On Uart    clk: RCC_CR=0x0a020083 RCC_CFGR=0x00000000
 
